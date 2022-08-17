@@ -1,9 +1,11 @@
 <renderpath>
-    <rendertarget name="depth" sizedivisor="1 1" format="readabledepth" />
-    <rendertarget name="FaceMorph" sizedivisor="1 1" format="rgba" filter="true" />
-    <command type="scenepass" pass="FaceDepth" output="depth" />
-    <command type="scenepass" pass="FaceMorph" depthstencil="depth" tag="3dStartFinish;FaceMorph"  output="FaceMorph">
+    <!-- <rendertarget name="depth" sizedivisor="1 1" format="readabledepth" /> -->
+    <!-- <command type="scenepass" pass="FaceDepth" output="depth" /> -->
+    <!-- <command type="scenepass" pass="FaceMorph" depthstencil="depth" tag="3dStartFinish;FaceMorph"  output="FaceMorph">
         <texture unit="depth" name="depth" />
+    </command> -->
+    <rendertarget name="FaceMorph" sizedivisor="1 1" format="rgba" filter="true" />
+    <command type="scenepass" pass="FaceMorph" tag="3dStartFinish;FaceMorph"  output="FaceMorph">
     </command>
     <rendertarget name="blurh" sizedivisor="1 1" format="rgba" filter="true" />
     <rendertarget name="blurv" sizedivisor="1 1" format="rgba" filter="true" />
@@ -36,5 +38,5 @@
         <texture unit="normal" name="FaceMorph" />
     </command>
     <command type="clear" color="0.5 0.5 0.5 0.5" tag="FaceMorph" output="FaceMorph" />
-    <command type="clear" depth="1.0" output="depth" />
+    <!-- <command type="clear" depth="1.0" output="depth" /> -->
 </renderpath>

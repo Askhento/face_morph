@@ -7,6 +7,7 @@
 #define PI 3.14159265
 
 #ifdef FACE
+uniform float4x3 cFaceInvMatrix;
 uniform float cProgress;
 #endif
 
@@ -84,6 +85,7 @@ float4 GaussianBlur(int blurKernelSize, float2 blurDir, float2 blurRadius, float
 void VS(
     float4 iPos: POSITION,
     float3 iNormal: NORMAL,
+    float4 iTangent : TANGENT,
     float2 iTexCoord: TEXCOORD0,
     float2 iTexCoord1: TEXCOORD1,
     out float2 oTexCoord: TEXCOORD0,
@@ -96,10 +98,17 @@ void VS(
 ) {
 
 #ifdef FACE
-
-  float4 basePos = float4(iNormal, 1.0);
+  float4x3 modelMatrix = iModelMatrix;
+  float4 basePos = float4(iTangent.xyz, 1.0);
   float4 morphedPos = iPos;
   float4 facePos = float4(iTexCoord, iTexCoord1);
+  float3 faceWorld = mul(facePos, modelMatrix).xyz;
+  float3 faceView = mul(mul(facePos, modelMatrix), cView).xyz;
+
+  float3 faceNormal = normalize(mul(float4(iNormal, 0.0), cFaceInvMatrix).xyz);
+  float3 eyeDir = normalize(faceWorld - cCameraPos);
+  float cameraFacing = (dot(eyeDir, faceNormal));
+  cameraFacing = smoothstep(0.0, 1.0, cameraFacing) * 0.5  + 0.5;
 
   float3 vertexOffset = lerp(float3(0.0, 0.0, 0.0), morphedPos.xyz - basePos.xyz, cProgress);
   float4 localPos = float4(facePos.xyz + vertexOffset, 1.0);
@@ -109,10 +118,11 @@ void VS(
   // localPos = float4(iNormal.xyz, 1.0);
 
 #ifdef DEBUG
-  oColor.xyz = vertexOffset;
+  float offsetAmount = length(vertexOffset);
+  oColor = float4(vertexOffset, offsetAmount);
+  oColor.xyz = float3(cameraFacing, cameraFacing, cameraFacing);
 #endif
 
-  float4x3 modelMatrix = iModelMatrix;
   float3 worldPos = mul(localPos, modelMatrix).xyz;
   oPos = GetClipPos(worldPos);
   oScreenPos = GetScreenPosPreDiv(GetClipPos(mul(facePos, modelMatrix).xyz)) - GetScreenPosPreDiv(GetClipPos(mul(localPos, modelMatrix).xyz));
@@ -151,13 +161,9 @@ void PS(
 #ifdef FACE
   oColor = pack2x16FloatToRGBA(iScreenPos);
 #ifdef DEBUG
+  oColor = float4(iColor.xyz / (iColor.w + 1.0), 1.0);
   // debug with tone map
-  float amount = length(iColor.xyz) + 1.0;
-
-//   float magn = amount / (amount + 1.0);
-
-  oColor = float4(amount, 0.0, 0.0, 1.0);
-  oColor = float4(iColor.xyz / amount, 1.0);
+  // oColor.xyz = iColor.xyz;
 #endif
 #endif
 

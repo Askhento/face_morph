@@ -40,10 +40,6 @@ vec4 pack2x16FloatToRGBA(vec2 value) {
   return res;
 }
 
-vec2 mirrorUV(vec2 uv) {
-  // return fract(uv);
-  return 1.0 - abs(2.0 * fract(0.5 * uv) - 1.0);
-}
 
 // Adapted: http://callumhay.blogspot.com/2010/09/gaussian-blur-shader-glsl.html
 vec4 GaussianBlur(int blurKernelSize, vec2 blurDir, vec2 blurRadius,
@@ -105,12 +101,10 @@ void VS() {
 
   float offsetAmount = length(vertexOffset);
   vColor = vec4(vertexOffset, offsetAmount);
-  vColor.xyz = vec3(cameraFacing);
+  // vColor.xyz = vec3(cameraFacinsg);
 
-  // vec3 worldPos = GetWorldPos(modelMatrix);
   vec3 worldPos = (localPos * modelMatrix).xyz;
   gl_Position = GetClipPos(worldPos);
-  // vScreenPos = GetScreenPosPreDiv(gl_Position);
   vScreenPos = GetScreenPosPreDiv(GetClipPos((facePos * modelMatrix).xyz)) -
                GetScreenPosPreDiv(GetClipPos((localPos * modelMatrix).xyz));
   // vScreenPos *= 2.0;
@@ -155,10 +149,9 @@ void PS() {
   gl_FragColor = pack2x16FloatToRGBA(vScreenPos);
 #ifdef DEBUG
     gl_FragColor = vec4(vColor.xyz / (vColor.w + 1.0), 1.0);
-    gl_FragColor = vColor;
-    float d = ReconstructDepth(texture2D(sDepthBuffer, vScreenPos).r); // use ReconstructDepth when HWDEPTH
-
-    gl_FragColor.xyz = vec3(d);
+    // gl_FragColor = vColor;
+    // float d = ReconstructDepth(texture2D(sDepthBuffer, vScreenPos).r); // use ReconstructDepth when HWDEPTH
+    // gl_FragColor.xyz = vec3(d);
 #endif
 #endif
 
