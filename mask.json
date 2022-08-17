@@ -1,0 +1,37 @@
+{
+  "name": "FaceMorph",
+  "section": 1,
+  "preview": "Icon.png",
+  "script": "main.as",
+  "facemodel_version": 1,
+  "effects": [
+    {
+      "-name": "facemorph",
+      "model": "Models/face_v0.mdl",
+      "nface": 0,
+      "debug": false,
+      "keys": [
+        { "name": "Key 1", "weight": 0.0 },
+        { "name": "Key 2", "weight": 1.0 }
+      ]
+    },
+    {
+      "name": "facemorph",
+      "model": "Models/face_v1.mdl",
+      "nface": 0,
+      "debug": false,
+      "keys": [
+        { "name": "Key 1", "weight": 0.0 },
+        { "name": "Key 2", "weight": 1.0 }
+      ]
+    }
+  ],
+  "plugins": [
+    {
+      "-name": "Perspective",
+      "near_clip": 0.1,
+      "far_clip": 3000.0,
+      "fov": 30
+    }
+  ]
+}

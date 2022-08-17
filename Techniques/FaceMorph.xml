@@ -1,0 +1,4 @@
+<technique vs="FaceMorph" ps="FaceMorph" vsdefines="FACE" psdefines="FACE">
+    <pass name="shadow" depthwrite="true" blend="replace" />
+    <pass name="FaceMorph" depthwrite="true" blend="replace" />
+</technique>
