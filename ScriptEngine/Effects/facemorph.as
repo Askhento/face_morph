@@ -7,7 +7,7 @@
     EFFECT
 
     clean up
-    add nface parameter
+    add nface parameter - done, but still need to fix
     optimize for 2 faces
     combine with perspective - done
     extract facemodel v0 - done
@@ -19,17 +19,17 @@
 
     clean up
     fix edges - done
-    hlsl version
-    try different blur approach 
+    hlsl version - done
+    try different blur approach
 
     ADD-ON
 
-    Tangents non complele!
+    Tangents non complele! - done, added placeholder
     export settings : VK face, position, normal, uv, uv (create uv slot with _UV2 at end), orientation front, applied transforms (cmd + a)
-    set by default all required params when VK face is on
+    set by default all required params when VK face is on - done
     need to flip horizontal axis - done (double flip performed in urho, which is bad but works fine)
     create preset for keys in mask.json
-    create all slots (UV, UV2) by default
+    create all slots (UV, UV2) by default - done
     separate addon only for face morph in blender addon
 
 */
@@ -64,29 +64,26 @@ namespace MaskEngine
         bool debug = false;
     private
         int facemodel_version = 0;
-    private 
+    private
         bool perspective_checked = false;
-    private 
+    private
         bool debug_render_added = false;
-
+    private
+        float progress = 1.0;
 
         bool Init(const JSONValue &effect_desc, BaseEffect @parent) override
         {
-
 
             if (!BaseEffectImpl::Init(effect_desc, parent))
             {
                 return false;
             }
 
-
             if (effect_desc.Contains("debug"))
             {
                 debug = effect_desc.Get("debug").GetBool();
             }
 
-    
-        
             String morphModelFile = "";
 
             if (effect_desc.Contains("model"))
@@ -105,7 +102,10 @@ namespace MaskEngine
                 return false;
             }
 
-            Print(_faceIdx);
+            if (effect_desc.Contains("progress"))
+            {
+                progress = effect_desc.Get("progress").GetFloat();
+            }
 
             String morphModelConfig =
                 "{" +
@@ -135,7 +135,6 @@ namespace MaskEngine
                 }
             }
             @morphModelNode = morphModelEffect.GetNode(0);
-
 
             // creating animated model to accesss morphs
             morphModelNode.scale = Vector3(-1.0, 1.0, 1.0);
@@ -202,16 +201,13 @@ namespace MaskEngine
                     log.Error("facemorph : \"keys\" shoud be array");
                 }
 
-    
-
                 for (uint i = 0; i < keys.size; i++)
                 {
                     JSONValue keyJSON = keys[i];
                     String key = keyJSON.Get("name").GetString();
                     float weight = keyJSON.Get("weight").GetFloat();
 
-                    if (!SetMorphWeightByName(key, weight))
-                        continue;
+                    SetMorphWeightByName(key, weight);
                 }
             }
             else
@@ -220,18 +216,18 @@ namespace MaskEngine
                 return false;
             }
 
-
+            SetProgress(progress);
 
             // trying to guess facemodel_version from vertex count
             if (morphVertexBuffer.vertexCount == 1572)
             {
                 facemodel_version = 0;
-            } 
+            }
             else if (morphVertexBuffer.vertexCount == 160)
             {
                 facemodel_version = 1;
             }
-            else 
+            else
             {
                 log.Error("facemorph : vertex count for model " + morphModelFile + " doesn't match with any facemodel_version : " + morphVertexBuffer.vertexCount);
                 return false;
@@ -241,20 +237,20 @@ namespace MaskEngine
 
             if (global_facemodel_version != facemodel_version)
             {
-                log.Error("facemorph : facemodel_version of model " + morphModelFile + " is facemodel_version" + facemodel_version + ", but mask.json specifies facemodel_version" +global_facemodel_version);
+                log.Error("facemorph : facemodel_version of model " + morphModelFile + " is facemodel_version" + facemodel_version + ", but mask.json specifies facemodel_version" + global_facemodel_version);
                 return false;
             }
             //  Creating white face as a donor of vertex data
-            String faceModelConfig = 
-            "{" +
-            "\"name\": \"facemodel\"," +
-            "\"nface\" : " + _faceIdx + "," +
-            "\"eyes\": true," +
-            "\"mouth\": true," +
-            "\"texture\": { "+ 
+            String faceModelConfig =
+                "{" +
+                "\"name\": \"facemodel\"," +
+                "\"nface\" : " + _faceIdx + "," +
+                "\"eyes\": true," +
+                "\"mouth\": true," +
+                "\"texture\": { " +
                 "\"MatDiffColor\": [1.0, 1.0, 1.0, 1.0] " +
-            "}" + 
-            "}";
+                "}" +
+                "}";
 
             @faceModelEffect = CreateEffect("facemodel", wasSkip);
 
@@ -272,8 +268,6 @@ namespace MaskEngine
             }
 
             @faceModelNode = faceModelEffect.GetNode(0);
-
-
 
             if (debug)
             {
@@ -298,7 +292,6 @@ namespace MaskEngine
                     VertexElement element = morphVertexElements[i];
                     Print("    elem " + i + ", semantic : " + element.semantic + ", type : " + element.type + ", offset : " + element.offset);
                 }
-                
             }
 
             SubscribeToEvent("Update", "HandleUpdate");
@@ -310,12 +303,20 @@ namespace MaskEngine
 
         void HandleUpdate(StringHash eventType, VariantMap &eventData)
         {
+
+            // if (false) {
+            //     float progress = Sin(time.elapsedTime * 400.0) * 0.5 + 0.5;
+            //     progress *= 0.5;
+            //     // progress = 0.5;
+            //     SetProgress(progress);
+            // }
+
             UpdateMorphModel();
             UpdateForPerspective();
             UpdateDebugRender();
         }
 
-        void UpdateMorphModel() 
+        void UpdateMorphModel()
         {
             // morphNode.enabled = false;
 
@@ -336,21 +337,22 @@ namespace MaskEngine
             IndexBuffer @faceIndexBuffer = faceGeometry.indexBuffer;
             VectorBuffer faceVectorIndexBuffer = faceIndexBuffer.GetData();
 
-
             // updating face vertices
             for (uint i = 0; i < morphVertexBuffer.vertexCount; i++)
             {
                 uint j = i;
-                if (facemodel_version == 0) {
+                if (facemodel_version == 0)
+                {
                     // magic number !!!
-                    if (i >= 1318) {
-                        j = i + 1;   
-                    } 
+                    if (i >= 1318)
+                    {
+                        j = i + 1;
+                    }
                 }
                 uint morphOffset = i * morphVertexBuffer.vertexSize;
                 uint faceOffset = j * faceVertexBuffer.vertexSize;
-                
-                // ! use proper semantic offsets 
+
+                // ! use proper semantic offsets
 
                 faceVectorVertexBuffer.Seek(faceOffset);
                 Vector3 facePos = faceVectorVertexBuffer.ReadVector3();
@@ -358,14 +360,14 @@ namespace MaskEngine
                 Vector3 faceNormal = faceVectorVertexBuffer.ReadVector3();
                 faceNormal.Normalize();
 
-                // vert color 
+                // vert color
                 // morphVectorVertexBuffer.Seek(morphOffset + 24);
                 // morphVectorVertexBuffer.WriteUByte(uint8(faceNormal.x * 255));
                 // morphVectorVertexBuffer.WriteUByte(uint8(faceNormal.y * 255));
                 // morphVectorVertexBuffer.WriteUByte(uint8(faceNormal.z * 255));
                 // morphVectorVertexBuffer.WriteUByte(uint8(255));
 
-                // morphVectorVertexBuffer.WriteVector4(Vector4(faceNormal, 1.0)); 
+                // morphVectorVertexBuffer.WriteVector4(Vector4(faceNormal, 1.0));
                 morphVectorVertexBuffer.Seek(morphOffset + 12);
                 morphVectorVertexBuffer.WriteVector3(faceNormal);
 
@@ -374,41 +376,31 @@ namespace MaskEngine
                 morphVectorVertexBuffer.WriteVector2(Vector2(-facePos.x, facePos.y)); // ! x is flipped
                 morphVectorVertexBuffer.Seek(morphOffset + 32);
                 morphVectorVertexBuffer.WriteVector2(Vector2(facePos.z, 1.0));
-
             }
 
             morphVertexBuffer.SetData(morphVectorVertexBuffer);
 
-
-            float progress = Sin(time.elapsedTime * 400.0) * 0.5 + 0.5;
-            progress *= 0.5;
-            // progress = 0.5;
-            SetProgress(progress);
-
-            // SetMorphWeightByName("Key 1", progress);
-            // SetMorphWeightByName("Key 2", 1.0 - progress);
-
             faceModelNode.enabled = false;
             Matrix4 faceInvMatrix = faceModelNode.worldTransform.Inverse().ToMatrix4().Transpose();
             morphAnimModel.materials[0].shaderParameters["FaceInvMatrix"] = Variant(faceInvMatrix);
-
         }
 
-        void UpdateForPerspective() 
+        void UpdateForPerspective()
         {
+            // if mask uses perspective, need to update render pipeline
             // should be done only once
-            if (perspective_checked) return;
+            if (perspective_checked)
+                return;
             bool perspective_enabled = false;
             // uint perspIndex = 0;
             uint morphIndex = 0;
-            RenderPath@ morph2DRP;
+            RenderPath @morph2DRP;
             uint lastCommand = 0;
-
 
             for (uint i = 0; i < renderer.numViewports; i++)
             {
                 Viewport @viewport = renderer.viewports[i];
-                RenderPath@ rp = viewport.renderPath;
+                RenderPath @rp = viewport.renderPath;
                 for (uint j = 0; j < rp.numRenderTargets; j++)
                 {
                     RenderTargetInfo rt = rp.renderTargets[j];
@@ -424,27 +416,27 @@ namespace MaskEngine
                     if (command.tag.StartsWith("3dStartFinish;FaceMorph"))
                     {
                         @morphRP = renderer.viewports[i].renderPath;
-                        @morph2DRP = renderer.viewports[Min(i+1, renderer.numViewports-1)].renderPath;
+                        @morph2DRP = renderer.viewports[Min(i + 1, renderer.numViewports - 1)].renderPath;
                     }
                 }
-
             }
 
-            if (perspective_enabled) 
-            {   
+            if (perspective_enabled)
+            {
 
-                if (morph2DRP is null) {
+                if (morph2DRP is null)
+                {
                     perspective_checked = true;
                     return;
                 }
 
-                for (uint i = morph2DRP.numCommands-1; i > 0; i--)
+                for (uint i = morph2DRP.numCommands - 1; i > 0; i--)
                 {
-                    RenderPathCommand morphCommand =  morph2DRP.commands[i];
+                    RenderPathCommand morphCommand = morph2DRP.commands[i];
                     // log.Error(morphCommand.tag);
-                    if (morphCommand.tag.Contains("FaceMorph")) 
+                    if (morphCommand.tag.Contains("FaceMorph"))
                     {
-                    // log.Error(i);
+                        // log.Error(i);
                         morph2DRP.RemoveCommand(i);
                         morphRP.InsertCommand(2, morphCommand);
                     }
@@ -452,18 +444,18 @@ namespace MaskEngine
             }
 
             perspective_checked = true;
-
         }
         void UpdateDebugRender()
         {
-            if (debug_render_added || !debug) return;
+            if (debug_render_added || !debug)
+                return;
 
             // modifying render path to chech some debug info
 
             morphRP.SetEnabled("Blur", false);
             morphRP.SetEnabled("Warp;FaceMorph", false);
 
-            // showing facemodel to viewport 
+            // showing facemodel to viewport
             for (uint i = 1; i < morphRP.numCommands; i++)
             {
                 RenderPathCommand command = morphRP.commands[i];
@@ -480,19 +472,15 @@ namespace MaskEngine
             debug_render_added = true;
         }
 
-    
-
-    
-
         String GetName() override
         {
             return "facemorph";
         }
 
-        void SetProgress(float progress)
+        void SetProgress(float new_progress)
         {
-            morphAnimModel.materials[0].shaderParameters["Progress"] = Variant(progress);
-        }
+            morphAnimModel.materials[0].shaderParameters["Progress"] = Variant(new_progress);
+                }
 
         bool SetMorphWeightByName(String key, float weight)
         {
