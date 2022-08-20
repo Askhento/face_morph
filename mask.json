@@ -3,26 +3,38 @@
   "section": 1,
   "preview": "Icon.png",
   "script": "main.as",
-  "facemodel_version": 1,
+  "facemodel_version": 0,
   "effects": [
     {
-      "-name": "facemorph",
+      "name": "facemorph",
       "model": "Models/face_v0.mdl",
       "debug": false,
       "progress": 1,
       "keys": [
-        { "name": "Key 1", "weight": 0.0 },
-        { "name": "Key 2", "weight": 1.0 }
+        {
+          "name": "Key 1",
+          "weight": 0.5
+        },
+        {
+          "name": "Key 2",
+          "weight": 0.0
+        }
       ]
     },
     {
-      "name": "facemorph",
+      "-name": "facemorph",
       "model": "Models/face_v1.mdl",
       "debug": false,
-      "progress": 1,
+      "progress": 1.0,
       "keys": [
-        { "name": "Key 1", "weight": 0.0 },
-        { "name": "Key 2", "weight": 1.0 }
+        {
+          "name": "Ключ 1",
+          "weight": 1.0
+        },
+        {
+          "name": "Ключ 2",
+          "weight": 1.0
+        }
       ]
     }
   ],

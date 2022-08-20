@@ -6,18 +6,18 @@
 
     EFFECT
 
-    clean up
-    add nface parameter - done, but still need to fix
+    add nface parameter
     optimize for 2 faces
     combine with perspective - done
     extract facemodel v0 - done
     multiple shape keys ?  - done
     add debug view - done
-    choose facemodel version automatically !
+    choose facemodel version automatically ! - tried, seems not possible
+    use proper semantic for vertex offsets
+
 
     SHADERS
 
-    clean up
     fix edges - done
     hlsl version - done
     try different blur approach
@@ -25,10 +25,9 @@
     ADD-ON
 
     Tangents non complele! - done, added placeholder
-    export settings : VK face, position, normal, uv, uv (create uv slot with _UV2 at end), orientation front, applied transforms (cmd + a)
     set by default all required params when VK face is on - done
     need to flip horizontal axis - done (double flip performed in urho, which is bad but works fine)
-    create preset for keys in mask.json
+    create preset for keys in mask.json - done
     create all slots (UV, UV2) by default - done
     separate addon only for face morph in blender addon
 
@@ -480,7 +479,7 @@ namespace MaskEngine
         void SetProgress(float new_progress)
         {
             morphAnimModel.materials[0].shaderParameters["Progress"] = Variant(new_progress);
-                }
+        }
 
         bool SetMorphWeightByName(String key, float weight)
         {
@@ -492,8 +491,8 @@ namespace MaskEngine
             }
             shapeKeysMap.Get(key, index);
             morphAnimModel.SetMorphWeight(index, weight);
-            // if (debug)
-            //     Print("    key : " + key + ", weight = " + weight + ", index = " + index);
+            if (debug)
+                Print("    key : " + key + ", weight = " + weight + ", index = " + index);
             return true;
         }
     }
