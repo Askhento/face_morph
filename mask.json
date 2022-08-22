@@ -12,28 +12,16 @@
       "progress": 1,
       "keys": [
         {
-          "name": "Key 1",
-          "weight": 0.5
-        },
-        {
-          "name": "Key 2",
+          "name": "square_chin",
           "weight": 0.0
-        }
-      ]
-    },
-    {
-      "-name": "facemorph",
-      "model": "Models/face_v1.mdl",
-      "debug": false,
-      "progress": 1.0,
-      "keys": [
+        },
         {
-          "name": "Ключ 1",
+          "name": "thin_face",
           "weight": 1.0
         },
         {
-          "name": "Ключ 2",
-          "weight": 1.0
+          "name": "big_eye",
+          "weight": 0.0
         }
       ]
     }

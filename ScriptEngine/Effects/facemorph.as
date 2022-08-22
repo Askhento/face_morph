@@ -1,6 +1,11 @@
 #include "ScriptEngine/Effects/Base/BaseEffect.as"
 
 /*
+    refs:
+
+    https://urho3d.io/documentation/HEAD/_file_formats.html   UMDL binary format
+
+
     ideas :
 
 
