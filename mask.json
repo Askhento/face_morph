@@ -3,25 +3,17 @@
   "section": 1,
   "preview": "Icon.png",
   "script": "main.as",
-  "facemodel_version": 0,
+  "facemodel_version": 1,
   "effects": [
     {
       "name": "facemorph",
-      "model": "Models/face_v0.mdl",
+      "model": "Models/face_v1.mdl",
       "debug": false,
       "progress": 1,
       "keys": [
         {
-          "name": "square_chin",
-          "weight": 0.0
-        },
-        {
-          "name": "thin_face",
-          "weight": 1.0
-        },
-        {
-          "name": "big_eye",
-          "weight": 0.0
+          "name": "Key 1",
+          "weight": 0.4
         }
       ]
     }
