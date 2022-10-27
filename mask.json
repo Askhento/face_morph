@@ -13,14 +13,14 @@
       "keys": [
         {
           "name": "Key 1",
-          "weight": 0.4
+          "weight": 1.0
         }
       ]
     }
   ],
   "plugins": [
     {
-      "-name": "Perspective",
+      "name": "Perspective",
       "near_clip": 0.1,
       "far_clip": 3000.0,
       "fov": 30

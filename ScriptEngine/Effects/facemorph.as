@@ -57,8 +57,7 @@ namespace MaskEngine
         AnimatedModel @morphAnimModel;
     private
         StaticModel @morphStatic;
-    private
-        Node @morphNode;
+
     private
         RenderPath @morphRP;
 
@@ -141,7 +140,7 @@ namespace MaskEngine
             @morphModelNode = morphModelEffect.GetNode(0);
 
             // creating animated model to accesss morphs
-            morphModelNode.scale = Vector3(-1.0, 1.0, 1.0);
+            morphModelNode.scale = Vector3(1.0, 1.0, 1.0); //! -1
             morphStatic = morphModelNode.GetComponent("StaticModel");
             cache.ReloadResource(morphStatic.model); // model is chached on desktop for some reason
             morphAnimModel = morphModelNode.CreateComponent("AnimatedModel");
@@ -150,10 +149,8 @@ namespace MaskEngine
             morphAnimModel.model = morphStatic.model;
             morphAnimModel.lightMask = morphStatic.lightMask;
 
-            for (uint i = 0; i < morphStatic.numGeometries; i++)
-            {
-                morphAnimModel.material = morphStatic.materials[0];
-            }
+            morphAnimModel.material = morphStatic.materials[0];
+            morphAnimModel.materials[0].cullMode = CULL_CW;
             morphModelNode.RemoveComponent("StaticModel");
 
             // saving initial vertex data before morphs applied
@@ -250,6 +247,7 @@ namespace MaskEngine
                 "\"name\": \"facemodel\"," +
                 "\"nface\" : " + _faceIdx + "," +
                 "\"eyes\": true," +
+                "\"pass\" : \"same\"," +
                 "\"mouth\": true," +
                 "\"texture\": { " +
                 "\"MatDiffColor\": [1.0, 1.0, 1.0, 1.0] " +
@@ -300,20 +298,13 @@ namespace MaskEngine
 
             SubscribeToEvent("Update", "HandleUpdate");
 
-            AddTags(effect_desc, morphNode);
+            AddTags(effect_desc, morphModelNode);
 
             return true;
         }
 
         void HandleUpdate(StringHash eventType, VariantMap &eventData)
         {
-
-            // if (false) {
-            //     float progress = Sin(time.elapsedTime * 400.0) * 0.5 + 0.5;
-            //     progress *= 0.5;
-            //     // progress = 0.5;
-            //     SetProgress(progress);
-            // }
 
             UpdateMorphModel();
             UpdateForPerspective();
@@ -392,14 +383,12 @@ namespace MaskEngine
         void UpdateForPerspective()
         {
             // if mask uses perspective, need to update render pipeline
+            // this should be  done after perspective init
             // should be done only once
             if (perspective_checked)
                 return;
             bool perspective_enabled = false;
-            // uint perspIndex = 0;
-            uint morphIndex = 0;
             RenderPath @morph2DRP;
-            uint lastCommand = 0;
 
             for (uint i = 0; i < renderer.numViewports; i++)
             {
@@ -447,8 +436,14 @@ namespace MaskEngine
                 }
             }
 
+            if (debug)
+            {
+                PrintRenderDebug();
+            }
+
             perspective_checked = true;
         }
+
         void UpdateDebugRender()
         {
             if (debug_render_added || !debug)
@@ -474,6 +469,58 @@ namespace MaskEngine
             }
 
             debug_render_added = true;
+        }
+
+        void PrintRenderDebug()
+        {
+
+            for (uint j = 0; j < renderer.numViewports; j++)
+            {
+                RenderPath @rp = renderer.viewports[j].renderPath;
+                Print("\n\n");
+                Print("RenderPath " + j + "====================================");
+                for (uint i = 0; i < rp.numCommands; i++)
+                {
+                    RenderPathCommand command = rp.commands[i];
+                    Print("--------------------");
+                    Print("pass " + command.pass + " = " + Variant(i).ToString() + ", tag = " + command.tag);
+
+                    Print("");
+                    Print("Texture inputs: ");
+                    Print("");
+                    for (TextureUnit k = TU_DIFFUSE; k < MAX_TEXTURE_UNITS; k++)
+                    {
+                        String textureUnitStr = GetTextureUnitName(k);
+                        String name = command.get_textureNames(k);
+                        if (name != "")
+                            Print("  " + textureUnitStr + " = " + name);
+                    }
+
+                    Print("");
+                    Print("Texture outputs: ");
+
+                    for (TextureUnit k = TU_DIFFUSE; k < MAX_TEXTURE_UNITS; k++)
+                    {
+                        String textureUnitStr = GetTextureUnitName(k);
+                        String name = command.get_outputNames(k);
+                        if (name != "")
+                            Print("  " + textureUnitStr + " = " + name);
+                    }
+
+                    Print("");
+                    Print("  psdef = " + command.pixelShaderDefines);
+                    Print("  vsdef = " + command.vertexShaderDefines);
+                }
+
+                Print("");
+                Print("RenderTargets:");
+                for (uint i = 0; i < rp.numRenderTargets; i++)
+                {
+                    RenderTargetInfo rt = rp.renderTargets[i];
+                    Print("  " + i + " name = " + rt.name + ", tag = " + rt.tag);
+                }
+            }
+            log.Error("========================");
         }
 
         String GetName() override

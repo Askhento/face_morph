@@ -4,11 +4,15 @@
     <!-- <command type="scenepass" pass="FaceMorph" depthstencil="depth" tag="3dStartFinish;FaceMorph"  output="FaceMorph">
         <texture unit="depth" name="depth" />
     </command> -->
-    <rendertarget name="FaceMorph" sizedivisor="1 1" format="rgba" filter="true" />
-    <command type="scenepass" pass="FaceMorph" tag="3dStartFinish;FaceMorph"  output="FaceMorph">
-    </command>
     <rendertarget name="blurh" sizedivisor="1 1" format="rgba" filter="true" />
     <rendertarget name="blurv" sizedivisor="1 1" format="rgba" filter="true" />
+    <rendertarget name="FaceMorph" sizedivisor="1 1" format="rgba" filter="true" />
+    <command type="clear" color="0.499 0.499 0.499 0.499" tag="FaceMorph" output="FaceMorph" />
+    <command type="scenepass" pass="FaceMorph" tag="3dStartFinish;FaceMorph"  output="FaceMorph" cleardepth="1">
+    </command>
+    <!-- clear depth so scene could be rendered without knowing about facemorph -->
+    <command type="clear" depth="1.0" />
+    <!-- blur offset vectors so edges are cool -->
     <command type="quad" tag="Blur;FaceMorph" vs="FaceMorph" ps="FaceMorph" vsdefines="UV_QUAD" psdefines="BLUR3" output="blurh">
         <parameter name="BlurDir" value="1.0 0.0" />
         <parameter name="BlurRadius" value="4.0" />
@@ -27,16 +31,19 @@
         <parameter name="BlurSigma" value="4.0" />
         <texture unit="diffuse" name="blurv" />
     </command>
-    <command type="quad" tag="Blur;FaceMorph" vs="FaceMorph" ps="FaceMorph" vsdefines="UV_QUAD" psdefines="BLUR3" output="FaceMorph">
+    <command type="quad" tag="Blur;FaceMorph" vs="FaceMorph" ps="FaceMorph" vsdefines="UV_QUAD" psdefines="BLUR3" output="blurv">
         <parameter name="BlurDir" value="0.0 1.0" />
         <parameter name="BlurRadius" value="4.0" />
         <parameter name="BlurSigma" value="4.0" />
         <texture unit="diffuse" name="blurh" />
     </command>
-    <command type="quad" tag="Warp;FaceMorph" vs="FaceMorph" ps="FaceMorph" vsdefines="UV_QUAD" psdefines="WARP" output="viewport">
+    <command type="quad" tag="Warp;FaceMorph" vs="FaceMorph" ps="FaceMorph" vsdefines="UV_QUAD" psdefines="WARP" output="FaceMorph">
         <texture unit="diffuse" name="viewport" />
-        <texture unit="normal" name="FaceMorph" />
+        <texture unit="normal" name="blurv" />
     </command>
-    <command type="clear" color="0.5 0.5 0.5 0.5" tag="FaceMorph" output="FaceMorph" />
+    <command type="quad" vs="CopyFramebuffer" ps="CopyFramebuffer" tag="FaceMorph" output="viewport">
+        <texture unit="diffuse" name="FaceMorph" />
+    </command>
+    <!-- <command type="clear" color="0.5 0.5 0.5 0.5" tag="FaceMorph" output="FaceMorph" /> -->
     <!-- <command type="clear" depth="1.0" output="depth" /> -->
 </renderpath>
